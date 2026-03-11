@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: autoresearch-dataloader
+  namespace: sbekkerm-autoresearch
+  labels:
+    app.kubernetes.io/part-of: sbekkerm-autoresearch
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: sbekkerm-autoresearch-dataloader
+    spec:
+      serviceAccountName: sbekkerm-autoresearch-sa
+      restartPolicy: Never
+      containers:
+        - name: dataloader
+          image: quay.io/aicatalyst/autoresearch/autoresearch_dataloader:latest
+          env:
+            - name: HF_HOME
+              value: /data/hf
+            - name: HF_DATASET
+              value: karpathy/climbmix-400b-shuffle
+            - name: HF_REPO_TYPE
+              value: dataset
+          resources:
+            requests:
+              cpu: "2"
+              memory: 4Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+          volumeMounts:
+            - name: data-cache
+              mountPath: /data
+      volumes:
+        - name: data-cache
+          persistentVolumeClaim:
+            claimName: sbekkerm-autoresearch-data

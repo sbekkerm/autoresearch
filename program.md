@@ -7,23 +7,34 @@ This is an experiment to have the LLM do its own research.
 To set up a new experiment, work with the user to:
 
 1. **Agree on a run tag**: propose a tag based on today's date (e.g. `mar5`). The branch `autoresearch/<tag>` must not already exist — this is a fresh run.
-2. **Create the branch**: `git checkout -b autoresearch/<tag>` from current master.
+2. **Create the branch**: `git checkout -b autoresearch/<tag>` from the k8s branch.
 3. **Read the in-scope files**: The repo is small. Read these files for full context:
    - `README.md` — repository context.
    - `prepare.py` — fixed constants, data prep, tokenizer, dataloader, evaluation. Do not modify.
    - `train.py` — the file you modify. Model architecture, optimizer, training loop.
-4. **Verify data exists**: Check that `~/.cache/autoresearch/` contains data shards and a tokenizer. If not, tell the human to run `uv run prepare.py`.
-5. **Initialize results.tsv**: Create `results.tsv` with just the header row. The baseline will be recorded after the first run.
-6. **Confirm and go**: Confirm setup looks good.
+4. **Build and push the training image**: The Docker image (`docker/Dockerfile`) bakes in dependencies, the tokenizer, and pre-processed data shards so that training jobs start without any data prep overhead. Ask the user for the target registry/repository if not already known.
+   ```
+   podman build -f docker/Dockerfile -t <registry>/<repo>:autoresearch-<tag> .
+   podman push <registry>/<repo>:autoresearch-<tag>
+   ```
+5. **Configure the training job**: In `training-job.yaml`, set:
+   - `image:` to the pushed image tag
+   - `GIT_REPO` to the repository URL
+   - `GIT_REF` to the experiment branch (e.g. `autoresearch/mar5`)
+
+   Verify that `kubectl` can reach the cluster (a kubeconfig is available under `k8s/`).
+6. **Initialize results.tsv**: Create `results.tsv` with just the header row. The baseline will be recorded after the first run.
+7. **Confirm and go**: Confirm setup looks good.
 
 Once you get confirmation, kick off the experimentation.
 
 ## Experimentation
 
-Each experiment runs on a single GPU. The training script runs for a **fixed time budget of 5 minutes** (wall clock training time, excluding startup/compilation). You launch it simply as: `uv run train.py`.
+Each experiment runs on a single GPU on a Kubernetes node. The training script runs for a **fixed time budget of 5 minutes** (wall clock training time, excluding startup/compilation). You submit experiments as Kubernetes jobs — the job clones the experiment branch from git and runs `train.py`.
 
 **What you CAN do:**
 - Modify `train.py` — this is the only file you edit. Everything is fair game: model architecture, optimizer, hyperparameters, training loop, batch size, model size, etc.
+- Increase the dataset size by setting `NUM_SHARDS` (default 10) and `DOWNLOAD_WORKERS` (default 8) environment variables in the training job.
 
 **What you CANNOT do:**
 - Modify `prepare.py`. It is read-only. It contains the fixed evaluation, data loading, tokenizer, and training constants (time budget, sequence length, etc).
@@ -36,11 +47,11 @@ Each experiment runs on a single GPU. The training script runs for a **fixed tim
 
 **Simplicity criterion**: All else being equal, simpler is better. A small improvement that adds ugly complexity is not worth it. Conversely, removing something and getting equal or better results is a great outcome — that's a simplification win. When evaluating whether to keep a change, weigh the complexity cost against the improvement magnitude. A 0.001 val_bpb improvement that adds 20 lines of hacky code? Probably not worth it. A 0.001 val_bpb improvement from deleting code? Definitely keep. An improvement of ~0 but much simpler code? Keep.
 
-**The first run**: Your very first run should always be to establish the baseline, so you will run the training script as is.
+**The first run**: Your very first run should always be to establish the baseline, so you will submit the training script as is.
 
 ## Output format
 
-Once the script finishes it prints a summary like this:
+Once the job finishes, the pod log contains a summary like this:
 
 ```
 ---
@@ -55,7 +66,7 @@ num_params_M:     50.3
 depth:            8
 ```
 
-Note that the script is configured to always stop after 5 minutes, so depending on the computing platform of this computer the numbers might look different. You can extract the key metric from the log file:
+Note that the script is configured to always stop after 5 minutes, so depending on the GPU hardware the numbers might look different. You can extract the key metrics from the captured log:
 
 ```
 grep "^val_bpb:" run.log
@@ -89,23 +100,33 @@ d4e5f6g	0.000000	0.0	crash	double model width (OOM)
 
 ## The experiment loop
 
-The experiment runs on a dedicated branch (e.g. `autoresearch/mar5` or `autoresearch/mar5-gpu0`).
+The experiment runs on a dedicated branch (e.g. `autoresearch/mar5`).
 
 LOOP FOREVER:
 
-1. Look at the git state: the current branch/commit we're on
+1. Look at the git state: the current branch/commit we're on.
 2. Tune `train.py` with an experimental idea by directly hacking the code.
-3. git commit
-4. Run the experiment: `uv run train.py > run.log 2>&1` (redirect everything — do NOT use tee or let output flood your context)
-5. Read out the results: `grep "^val_bpb:\|^peak_vram_mb:" run.log`
-6. If the grep output is empty, the run crashed. Run `tail -n 50 run.log` to read the Python stack trace and attempt a fix. If you can't get things to work after more than a few attempts, give up.
-7. Record the results in the tsv (NOTE: do not commit the results.tsv file, leave it untracked by git)
-8. If val_bpb improved (lower), you "advance" the branch, keeping the git commit
-9. If val_bpb is equal or worse, you git reset back to where you started
+3. Commit the change locally.
+4. Push and submit the training job:
+   ```
+   git push origin HEAD
+   kubectl delete job autoresearch-training --ignore-not-found
+   kubectl apply -f training-job.yaml
+   ```
+5. Wait for the job to complete and capture the log:
+   ```
+   kubectl wait --for=condition=complete job/autoresearch-training --timeout=600s
+   kubectl logs job/autoresearch-training > run.log
+   ```
+6. Read out the results: `grep "^val_bpb:\|^peak_vram_mb:" run.log`
+7. If the grep output is empty, the run crashed. Read the pod log to find the stack trace and attempt a fix. If you can't get things to work after more than a few attempts, give up.
+8. Record the results in the tsv (NOTE: do not commit the results.tsv file, leave it untracked by git)
+9. If val_bpb improved (lower), keep the commit — the branch has advanced.
+10. If val_bpb is equal or worse, revert: `git reset --hard HEAD~1 && git push --force origin HEAD`
 
 The idea is that you are a completely autonomous researcher trying things out. If they work, keep. If they don't, discard. And you're advancing the branch so that you can iterate. If you feel like you're getting stuck in some way, you can rewind but you should probably do this very very sparingly (if ever).
 
-**Timeout**: Each experiment should take ~5 minutes total (+ a few seconds for startup and eval overhead). If a run exceeds 10 minutes, kill it and treat it as a failure (discard and revert).
+**Timeout**: Each experiment should take ~5 minutes total (+ overhead for pod scheduling and startup). If a job exceeds 10 minutes, kill it (`kubectl delete job autoresearch-training`) and treat it as a failure (discard and revert).
 
 **Crashes**: If a run crashes (OOM, or a bug, or etc.), use your judgment: If it's something dumb and easy to fix (e.g. a typo, a missing import), fix it and re-run. If the idea itself is fundamentally broken, just skip it, log "crash" as the status in the tsv, and move on.
 

@@ -1,0 +1,11 @@
+FROM registry.access.redhat.com/ubi9/python-311:latest
+
+USER root
+RUN curl -LsSf https://hf.co/cli/install.sh | bash
+ENV PATH="/root/.local/bin:$PATH"
+
+ENV HF_HOME="/data/hf"
+ENV HF_DATASET=""
+ENV HF_REPO_TYPE=""
+
+ENTRYPOINT ["sh", "-c", "hf download ${HF_DATASET} --repo-type=${HF_REPO_TYPE}"]

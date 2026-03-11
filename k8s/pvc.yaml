@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sbekkerm-autoresearch-data
+  namespace: sbekkerm-autoresearch
+  labels:
+    app.kubernetes.io/part-of: sbekkerm-autoresearch
+    purpose: gpu-training
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 600Gi

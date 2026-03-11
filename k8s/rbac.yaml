@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sbekkerm-autoresearch-sa
+  namespace: sbekkerm-autoresearch
+  labels:
+    app.kubernetes.io/part-of: sbekkerm-autoresearch
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sbekkerm-autoresearch-sa-token
+  namespace: sbekkerm-autoresearch
+  annotations:
+    kubernetes.io/service-account.name: sbekkerm-autoresearch-sa
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sbekkerm-autoresearch-role
+  namespace: sbekkerm-autoresearch
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status", "services", "configmaps", "secrets", "persistentvolumeclaims", "events"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["resourcequotas", "limitranges"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sbekkerm-autoresearch-rolebinding
+  namespace: sbekkerm-autoresearch
+subjects:
+  - kind: ServiceAccount
+    name: sbekkerm-autoresearch-sa
+    namespace: sbekkerm-autoresearch
+roleRef:
+  kind: Role
+  name: sbekkerm-autoresearch-role
+  apiGroup: rbac.authorization.k8s.io

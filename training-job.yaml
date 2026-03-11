@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: autoresearch-training
+  namespace: sbekkerm-autoresearch
+  labels:
+    app.kubernetes.io/part-of: sbekkerm-autoresearch
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: sbekkerm-autoresearch-training
+    spec:
+      serviceAccountName: sbekkerm-autoresearch-sa
+      restartPolicy: Never
+      containers:
+        - name: trainer
+          image: quay.io/aicatalyst/autoresearch/autoresearch_worker:latest
+          env:
+            - name: GIT_REPO
+              value: "https://github.com/sbekkerm/autoresearch.git"          # set to your repo URL
+            - name: GIT_REF
+              value: "master"
+            - name: NUM_SHARDS
+              value: "-1"
+            - name: DOWNLOAD_WORKERS
+              value: "8"
+          resources:
+            requests:
+              cpu: "4"
+              memory: 16Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "8"
+              memory: 32Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: cache
+              mountPath: /opt/app-root/src/.cache/autoresearch
+            - name: dshm
+              mountPath: /dev/shm
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      volumes:
+        - name: workspace
+          emptyDir: {}
+        - name: cache
+          persistentVolumeClaim:
+            claimName: sbekkerm-autoresearch-data
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 8Gi

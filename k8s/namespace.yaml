@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sbekkerm-autoresearch
+  labels:
+    app.kubernetes.io/part-of: sbekkerm-autoresearch
+    purpose: gpu-training
