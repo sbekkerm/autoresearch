@@ -22,7 +22,7 @@ spec:
             - name: GIT_REPO
               value: "https://github.com/sbekkerm/autoresearch.git"          # set to your repo URL
             - name: GIT_REF
-              value: "master"
+              value: "autoresearch/mar11"
             - name: NUM_SHARDS
               value: "-1"
             - name: DOWNLOAD_WORKERS
