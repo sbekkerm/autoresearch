@@ -1,0 +1,24 @@
+Cache directory: /opt/app-root/src/.cache/autoresearch
+
+Data: all 6543 shards already downloaded at /opt/app-root/src/.cache/autoresearch/data
+
+Tokenizer: already trained at /opt/app-root/src/.cache/autoresearch/tokenizer
+
+Done! Ready to train.
+Cloning into '/workspace'...
+Switched to a new branch 'autoresearch/mar12'
+branch 'autoresearch/mar12' set up to track 'origin/autoresearch/mar12'.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Vocab size: 8,192
+Model config: {'sequence_len': 2048, 'vocab_size': 8192, 'n_layer': 6, 'n_head': 5, 'n_kv_head': 5, 'n_embd': 640, 'window_pattern': 'SSSL'}
+Parameter counts:
+  wte                     : 5,242,880
+  value_embeds            : 15,728,640
+  lm_head                 : 5,242,880
+  transformer_matrices    : 29,491,680
+  scalars                 : 12
+  total                   : 55,706,092
+Estimated FLOPs per token: 2.713219e+08
+Scaling AdamW LRs by 1/sqrt(640/768) = 1.095445
+Time budget: 300s
+Gradient accumulation steps: 1
