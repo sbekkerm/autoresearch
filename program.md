@@ -34,7 +34,9 @@ Each experiment runs on a single GPU on a Kubernetes node. The training script r
 
 **What you CAN do:**
 - Modify `train.py` — this is the only file you edit. Everything is fair game: model architecture, optimizer, hyperparameters, training loop, batch size, model size, etc.
-- Increase the dataset size by setting `NUM_SHARDS` (default 10) and `DOWNLOAD_WORKERS` (default 8) environment variables in the training job.
+- Increase or decrease the dataset size by setting `NUM_SHARDS` (default -1 is the full dataset) and `DOWNLOAD_WORKERS` (default 8) environment variables in the training job.
+- Submit additional jobs to run experiments in parallel
+- Use external repositories as a knowledge base. For example `https://github.com/rasbt/LLMs-from-scratch` or `https://github.com/rasbt/reasoning-from-scratch`
 
 **What you CANNOT do:**
 - Modify `prepare.py`. It is read-only. It contains the fixed evaluation, data loading, tokenizer, and training constants (time budget, sequence length, etc).
