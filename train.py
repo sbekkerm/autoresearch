@@ -561,7 +561,7 @@ WINDOW_PATTERN = "SSSL"  # sliding window pattern: L=full, S=half context
 # Optimization
 TOTAL_BATCH_SIZE = 2**19  # ~524K tokens per optimizer step
 EMBEDDING_LR = 0.56  # learning rate for token embeddings (Adam) - decreased from 0.58
-UNEMBEDDING_LR = 0.00455  # learning rate for lm_head (Adam)
+UNEMBEDDING_LR = 0.0045  # learning rate for lm_head (Adam)
 MATRIX_LR = 0.055  # learning rate for matrix parameters (Muon)
 SCALAR_LR = 0.5  # learning rate for per-layer scalars (Adam)
 WEIGHT_DECAY = 0.2  # cautious weight decay for Muon
@@ -571,7 +571,7 @@ WARMDOWN_RATIO = 0.5  # fraction of time budget for LR warmdown
 FINAL_LR_FRAC = 0.1  # final LR as fraction of initial
 
 # Model size
-DEPTH = 6  # number of transformer layers
+DEPTH = 7  # number of transformer layers
 DEVICE_BATCH_SIZE = 128  # per-device batch size (reduce if OOM)
 
 # ---------------------------------------------------------------------------
