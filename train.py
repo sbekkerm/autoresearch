@@ -564,11 +564,11 @@ EMBEDDING_LR = 0.56  # learning rate for token embeddings (Adam) - decreased fro
 UNEMBEDDING_LR = 0.0045  # learning rate for lm_head (Adam)
 MATRIX_LR = 0.055  # learning rate for matrix parameters (Muon)
 SCALAR_LR = 0.5  # learning rate for per-layer scalars (Adam)
-WEIGHT_DECAY = 0.2  # cautious weight decay for Muon
+WEIGHT_DECAY = 0.22  # cautious weight decay for Muon
 ADAM_BETAS = (0.9, 0.95)  # Adam beta1, beta2
 WARMUP_RATIO = 0.05  # fraction of time budget for LR warmup
 WARMDOWN_RATIO = 0.5  # fraction of time budget for LR warmdown
-FINAL_LR_FRAC = 0.12  # final LR as fraction of initial
+FINAL_LR_FRAC = 0.1  # final LR as fraction of initial
 
 # Model size
 DEPTH = 6  # number of transformer layers
