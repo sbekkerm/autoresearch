@@ -82,6 +82,7 @@ class CausalSelfAttention(nn.Module):
             if has_ve(layer_idx, config.n_layer)
             else None
         )
+        self.attn_scale = nn.Parameter(torch.ones(self.n_head))
 
     def forward(self, x, ve, cos_sin, window_size):
         B, T, C = x.size()
@@ -101,6 +102,7 @@ class CausalSelfAttention(nn.Module):
 
         y = fa3.flash_attn_func(q, k, v, causal=True, window_size=window_size)
         y = y.contiguous().view(B, T, -1)
+        y = y * self.attn_scale.view(1, 1, -1)
         y = self.c_proj(y)
         return y
 
@@ -561,7 +563,7 @@ WINDOW_PATTERN = "SSSL"  # sliding window pattern: L=full, S=half context
 # Optimization
 TOTAL_BATCH_SIZE = 2**19  # ~524K tokens per optimizer step
 EMBEDDING_LR = 0.56  # learning rate for token embeddings (Adam) - decreased from 0.58
-UNEMBEDDING_LR = 0.0045  # learning rate for lm_head (Adam) - lower for 4-head model
+UNEMBEDDING_LR = 0.006  # learning rate for lm_head (Adam)
 MATRIX_LR = 0.055  # learning rate for matrix parameters (Muon)
 SCALAR_LR = 0.65  # learning rate for per-layer scalars (Adam)
 WEIGHT_DECAY = 0.2  # cautious weight decay for Muon
