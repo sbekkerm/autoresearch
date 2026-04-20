@@ -600,7 +600,7 @@ def build_model_config(depth):
         vocab_size=vocab_size,
         n_layer=depth,
         n_head=num_heads,
-        n_kv_head=2,
+        n_kv_head=4,
         n_embd=model_dim,
         window_pattern=WINDOW_PATTERN,
     )
