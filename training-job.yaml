@@ -2,18 +2,18 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: autoresearch-training
-  namespace: sbekkerm-autoresearch
+  namespace: autoresearch
   labels:
-    app.kubernetes.io/part-of: sbekkerm-autoresearch
+    app.kubernetes.io/part-of: autoresearch
 spec:
   backoffLimit: 2
   ttlSecondsAfterFinished: 86400
   template:
     metadata:
       labels:
-        app: sbekkerm-autoresearch-training
+        app: autoresearch-training
     spec:
-      serviceAccountName: sbekkerm-autoresearch-sa
+      serviceAccountName: autoresearch-sa
       restartPolicy: Never
       containers:
         - name: trainer
@@ -52,7 +52,7 @@ spec:
           emptyDir: {}
         - name: cache
           persistentVolumeClaim:
-            claimName: sbekkerm-autoresearch-data
+            claimName: autoresearch-data
         - name: dshm
           emptyDir:
             medium: Memory
