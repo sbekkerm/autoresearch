@@ -101,8 +101,8 @@ class CausalSelfAttention(nn.Module):
         q, k = norm(q), norm(k)
 
         y = fa3.flash_attn_func(q, k, v, causal=True, window_size=window_size)
+        y = y * self.attn_scale.view(1, 1, self.n_head, 1)
         y = y.contiguous().view(B, T, -1)
-        y = y * self.attn_scale.view(1, 1, -1)
         y = self.c_proj(y)
         return y
 
